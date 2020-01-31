@@ -110,7 +110,7 @@ func (r *RabbitMQ) Publish(data interface{}) error {
 }
 
 // TestRabbitMQConnection tries to connect to specified rabbitQM broker
-func TestRabbitMQConnection(config config.Interface) error {
+func TestRabbitMQConnection(config Config) error {
 	r := RabbitMQ{config: config}
 	var err error
 
