@@ -18,7 +18,7 @@ func (d *Database) Ping() error {
 }
 
 func (d *Database) Connect() error {
-	conn, err := sql.Open("postgres", d.ConnectionLine)
+	conn, err := sql.Open(d.Driver, d.ConnectionLine)
 	if err != nil {
 		return err
 	}
