@@ -9,7 +9,7 @@ import (
 // NewMySQL makes a new instance of Database and connect to a MySQL database.
 func NewMySQL(config Config) *Database {
 
-	connectionLine := "%s:%s@tcp(%s:%s)/%s"
+	connectionLine := "%s:%s@tcp(%s:%d)/%s"
 	connectionLine = fmt.Sprintf(connectionLine,
 		config.GetUser(), config.GetPassword(), config.GetHost(), config.GetPort(), config.GetDatabase())
 	mysql := Database{
