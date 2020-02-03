@@ -5,12 +5,11 @@ import (
 	"fmt"
 )
 
-type Database struct{
+type Database struct {
 	ConnectionLine string
-	Conn *sql.DB
-	Driver string
+	Conn           *sql.DB
+	Driver         string
 }
-
 
 //Ping Tests the connection.
 func (d *Database) Ping() error {
@@ -209,6 +208,7 @@ func (d *Database) GetJSONList(sqlString string) ([]map[string]interface{}, erro
 // Close is responsible for closing database connection
 func (d *Database) Close() {
 	err := d.Conn.Close()
-	fmt.Println(err)
-	panic(0)
+	if err != nil {
+		fmt.Println(err)
+	}
 }
