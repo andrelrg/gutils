@@ -9,12 +9,12 @@ import (
 
 // NewPgSQL makes a new instance of PgSQL and connect to PostgresSQL database.
 func NewPgSQL(config Config) *Database {
-	connectionLine := "host=%s port=%d user=%s dbname=%s"
+	var connectionLine string
 	if config.GetPassword() == "" {
-		connectionLine = fmt.Sprintf(connectionLine,
+		connectionLine = fmt.Sprintf("host=%s port=%d user=%s dbname=%s sslmode=disable",
 			config.GetHost(), config.GetPort(), config.GetUser(), config.GetDatabase())
 	} else {
-		connectionLine = fmt.Sprintf(connectionLine,
+		connectionLine = fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 			config.GetHost(), config.GetPort(), config.GetUser(), config.GetPassword(), config.GetDatabase())
 	}
 	pg := Database{
