@@ -9,7 +9,7 @@ import (
 
 // NewPgSQL makes a new instance of PgSQL and connect to PostgresSQL database.
 func NewPgSQL(config Config) *Database {
-	connectionLine := "host=%s port=%d user=%s dbname=%s sslmode=disable"
+	connectionLine := "host=%s port=%d user=%s dbname=%s"
 	if config.GetPassword() == "" {
 		connectionLine = fmt.Sprintf(connectionLine,
 			config.GetHost(), config.GetPort(), config.GetUser(), config.GetDatabase())
@@ -19,7 +19,7 @@ func NewPgSQL(config Config) *Database {
 	}
 	pg := Database{
 		ConnectionLine: connectionLine,
-		Driver: "postgres",
+		Driver:         "postgres",
 	}
 	var err error
 	err = pg.Connect()
