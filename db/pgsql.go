@@ -14,7 +14,7 @@ func NewPgSQL(config Config) *Database {
 		connectionLine = fmt.Sprintf("host=%s port=%d user=%s dbname=%s sslmode=disable",
 			config.GetHost(), config.GetPort(), config.GetUser(), config.GetDatabase())
 	} else {
-		connectionLine = fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+		connectionLine = fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
 			config.GetHost(), config.GetPort(), config.GetUser(), config.GetPassword(), config.GetDatabase())
 	}
 	pg := Database{
