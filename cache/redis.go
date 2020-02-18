@@ -75,7 +75,7 @@ func (r *Redis) Exist(key string) (bool, error) {
 	}
 	return true, nil
 }
-// Close is responsible for closing redis connection
+// FlushAll clears all keys in the cache
 func (r *Redis) FlushAll() error {
 	result := r.Client.FlushAll()
 	if result.Val() != "OK"{
