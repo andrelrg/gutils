@@ -55,6 +55,14 @@ func (r *Redis) Del(key string) error {
 	}
 	return nil
 }
+// DelMany delete many keys.
+func (r *Redis) DelMany(keys []string) error {
+	_, err := r.Client.Del(keys...).Result()
+	if err != nil {
+		return err
+	}
+	return nil
+}
 // Get get key.
 func (r *Redis) Get(key string) (string, error) {
 	value, err := r.Client.Get(key).Result()
