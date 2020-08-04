@@ -8,9 +8,15 @@ type ConnectionManager struct {
 	db *Database
 }
 
-//New is responsible of creating a new instance of consultQuestionRepository
-func NewConnectionManager(config Config) *ConnectionManager {
+//New is responsible of creating a new instance of consultQuestionRepository for mysql database
+func NewMySqlConnectionManager(config Config) *ConnectionManager {
 	mysql := NewMySQL(config)
+	return &ConnectionManager{db: mysql}
+}
+
+//New is responsible of creating a new instance of consultQuestionRepository for postgres database
+func NewPgSqlConnectionManager(config Config) *ConnectionManager {
+	mysql := NewPgSQL(config)
 	return &ConnectionManager{db: mysql}
 }
 
