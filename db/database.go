@@ -43,6 +43,26 @@ func (d *Database) Execute(query string, args ...interface{}) (sql.Result, error
 	return result, nil
 }
 
+
+// ExecuteWithTx executes the received query with the parameters provided within a transaction.
+func (d *Database) ExecuteWithTx(tx *sql.Tx, query string, args ...interface{}) (sql.Result, error) {
+	var result sql.Result
+
+	stmtIns, err := tx.Prepare(query)
+	if err != nil {
+		return result, err
+	}
+	defer stmtIns.Close()
+
+	result, err = stmtIns.Exec(args...)
+	if err != nil {
+		return result, err
+	}
+
+	return result, nil
+}
+
+
 //MapScan Get the result of a query in this format: map[string]interface{}
 func (d *Database) MapScan(query string, args ...interface{}) (map[string]interface{}, error) {
 	stmt, err := d.Conn.Prepare(query)
@@ -204,6 +224,11 @@ func (d *Database) GetJSONList(sqlString string) ([]map[string]interface{}, erro
 	}
 	return tableData, nil
 }
+
+func (d *Database) StartTransaction() (*sql.Tx, error) {
+	return d.Conn.Begin()
+}
+
 
 // Close is responsible for closing database connection
 func (d *Database) Close() {
