@@ -16,8 +16,8 @@ func NewMySqlConnectionManager(config Config) *ConnectionManager {
 
 //New is responsible of creating a new instance of consultQuestionRepository for postgres database
 func NewPgSqlConnectionManager(config Config) *ConnectionManager {
-	mysql := NewPgSQL(config)
-	return &ConnectionManager{db: mysql}
+	pgsql := NewPgSQL(config)
+	return &ConnectionManager{db: pgsql}
 }
 
 // Close closes database connection
