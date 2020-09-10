@@ -3,7 +3,7 @@ package time
 import "time"
 
 //GetTimeNow return the date now formatted in time zone
-func getTimeNow(format, timeZone string, onlyDate bool) (string, error) {
+func GetTimeNow(format, timeZone string, onlyDate bool) (string, error) {
 	timeNow := time.Now()
 
 	loc, err := time.LoadLocation(timeZone)
