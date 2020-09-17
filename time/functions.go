@@ -20,7 +20,7 @@ func GetTimeNowString(format, timeZone string, onlyDate bool) (string, error) {
 	return timeString, nil
 }
 
-func GetTimeNow(format, timeZone string) (time.Time, error) {
+func GetTimeNow(timeZone string) (time.Time, error) {
 	timeNow := time.Now()
 
 	loc, err := time.LoadLocation(timeZone)
