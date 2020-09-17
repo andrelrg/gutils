@@ -2,8 +2,8 @@ package time
 
 import "time"
 
-//GetTimeNow return the date now formatted in time zone
-func GetTimeNow(format, timeZone string, onlyDate bool) (string, error) {
+//GetTimeNowString return the date now formatted in time zone
+func GetTimeNowString(format, timeZone string, onlyDate bool) (string, error) {
 	timeNow := time.Now()
 
 	loc, err := time.LoadLocation(timeZone)
@@ -18,4 +18,16 @@ func GetTimeNow(format, timeZone string, onlyDate bool) (string, error) {
 
 	timeString := timeNow.Format(format)
 	return timeString, nil
+}
+
+func GetTimeNow(format, timeZone string) (time.Time, error) {
+	timeNow := time.Now()
+
+	loc, err := time.LoadLocation(timeZone)
+	if err != nil {
+		return time.Time{}, err
+	}
+	timeNow = timeNow.In(loc)
+
+	return timeNow, nil
 }
