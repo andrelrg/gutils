@@ -133,3 +133,14 @@ func (r *RabbitMQ) Close()  {
 	r.channel.Close()
 	r.conn.Close()
 }
+
+
+// CloseChannel closes the rabbit channel
+func (r *RabbitMQ) CloseChannel()  {
+	r.channel.Close()
+}
+
+// CloseConnect closes the rabbit connection
+func (r *RabbitMQ) CloseConnect()  {
+	r.conn.Close()
+}
