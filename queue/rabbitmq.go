@@ -115,7 +115,7 @@ func TestRabbitMQConnection(config Config) error {
 	var err error
 
 	err = r.connect()
-	defer r.Close()
+	defer r.CloseConnect()
 
 	if err != nil {
 		log.Println(err)
