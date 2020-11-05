@@ -1,14 +1,19 @@
 package db
 
 import (
+	"crypto/sha256"
 	"database/sql"
+	"encoding/json"
 	"fmt"
+	"github.com/astrolink/gutils/cache"
+	"time"
 )
 
 type Database struct {
 	ConnectionLine string
 	Conn           *sql.DB
 	Driver         string
+	CacheConfig    cache.Config
 }
 
 //Ping Tests the connection.
@@ -83,6 +88,75 @@ func (d *Database) MapScan(query string, args ...interface{}) (map[string]interf
 		}
 	}
 	return entry, nil
+}
+
+func (d *Database) MapScanRedis(query string, duration time.Duration, args ...interface{}) (map[string]interface{}, error) {
+	if d.CacheConfig == nil {
+		return d.MapScan(query, args...)
+	}
+
+	redis, err := cache.NewRedis(d.CacheConfig)
+
+	if err != nil {
+		fmt.Println("fail to connect to the cache: ", err.Error())
+
+		return d.MapScan(query, args...)
+	}
+
+	defer redis.Close()
+
+	var hashString string
+
+	hashString = generateKeyByQueryAndArgs(query, args...)
+
+	cacheResult, err := redis.Get(hashString)
+
+	if err != nil {
+		return d.setRedisByMapScan(query, redis, hashString, duration, args...)
+	}
+
+	var result map[string]interface{}
+
+	err = json.Unmarshal([]byte(cacheResult), &result)
+
+	if err != nil {
+		fmt.Println("unmarshal error: " + err.Error())
+
+		return d.setRedisByMapScan(query, redis, hashString, duration, args...)
+	}
+
+	return result, nil
+}
+
+func generateKeyByQueryAndArgs(query string, args ...interface{}) string {
+	for _, s := range args {
+		query += fmt.Sprintf("%v", s)
+	}
+
+	data := []byte(query)
+	hash := sha256.Sum256(data)
+
+	var hashString string
+
+	hashString = fmt.Sprintf("%x", hash[:])
+
+	return hashString
+}
+
+func (d *Database) setRedisByMapScan(query string, redis *cache.Redis, redisKey string, duration time.Duration, args ...interface{}) (map[string]interface{}, error) {
+	data, mapScanError := d.MapScan(query, args...)
+
+	if data == nil {
+		return data, mapScanError
+	}
+
+	jsonBytes, marshalError := json.Marshal(data)
+
+	if marshalError == nil {
+		_ = redis.Set(redisKey, string(jsonBytes), duration)
+	}
+
+	return data, mapScanError
 }
 
 //SliceMapScan Fetch all lines of given select
