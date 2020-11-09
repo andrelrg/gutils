@@ -115,7 +115,7 @@ func (d *Database) MapScan(query string, args ...interface{}) (map[string]interf
 	return entry, nil
 }
 
-//  MapScan Get the result of a query in this format: map[string]interface{}
+//  BasicMapScan Get the result of a query in this format: map[string]interface{}
 //  Individual types:
 //	bool, for booleans
 //	float64, for numbers
@@ -189,12 +189,16 @@ func (d *Database) BasicMapScan(query string, args ...interface{}) (map[string]i
 					v = items
 				}
 			default:
-				jsonType, marshalErr := json.Marshal(val)
-
-				if marshalErr != nil {
-					v = val
+				if val == nil{
+					v = nil
 				} else {
-					v = string(jsonType)
+					jsonType, marshalErr := json.Marshal(val)
+
+					if marshalErr != nil {
+						v = val
+					} else {
+						v = string(jsonType)
+					}
 				}
 			}
 
@@ -242,6 +246,44 @@ func (d *Database) MapScanRedis(query string, duration time.Duration, args ...in
 	return result, nil
 }
 
+func (d *Database) SliceMapScanRedis(query string, duration time.Duration, args ...interface{}) ([]map[string]interface{}, error) {
+	if d.CacheConfig == nil {
+		return d.BasicSliceMapScan(query, args...)
+	}
+
+	redis, err := cache.NewRedis(d.CacheConfig)
+
+	if err != nil {
+		fmt.Println("fail to connect to the cache: ", err.Error())
+
+		return d.BasicSliceMapScan(query, args...)
+	}
+
+	defer redis.Close()
+
+	var hashString string
+
+	hashString = generateKeyByQueryAndArgs(query, args...)
+
+	cacheResult, err := redis.Get(hashString)
+
+	if err != nil {
+		return d.setRedisBySliceMapScan(query, redis, hashString, duration, args...)
+	}
+
+	var result []map[string]interface{}
+
+	err = json.Unmarshal([]byte(cacheResult), &result)
+
+	if err != nil {
+		fmt.Println("unmarshal error: " + err.Error())
+
+		return d.setRedisBySliceMapScan(query, redis, hashString, duration, args...)
+	}
+
+	return result, nil
+}
+
 func generateKeyByQueryAndArgs(query string, args ...interface{}) string {
 	for _, s := range args {
 		query += fmt.Sprintf("%v", s)
@@ -259,6 +301,22 @@ func generateKeyByQueryAndArgs(query string, args ...interface{}) string {
 
 func (d *Database) setRedisByMapScan(query string, redis *cache.Redis, redisKey string, duration time.Duration, args ...interface{}) (map[string]interface{}, error) {
 	data, mapScanError := d.BasicMapScan(query, args...)
+
+	if data == nil {
+		return data, mapScanError
+	}
+
+	jsonBytes, marshalError := json.Marshal(data)
+
+	if marshalError == nil {
+		_ = redis.Set(redisKey, string(jsonBytes), duration)
+	}
+
+	return data, mapScanError
+}
+
+func (d *Database) setRedisBySliceMapScan(query string, redis *cache.Redis, redisKey string, duration time.Duration, args ...interface{}) ([]map[string]interface{}, error) {
+	data, mapScanError := d.BasicSliceMapScan(query, args...)
 
 	if data == nil {
 		return data, mapScanError
@@ -302,12 +360,128 @@ func (d *Database) SliceMapScan(query string, args ...interface{}) ([]map[string
 		for i, col := range columns {
 			var v interface{}
 			val := values[i]
-			b, ok := val.([]byte)
-			if ok {
-				v = string(b)
-			} else {
+
+			switch values[i].(type) {
+			case string:
+				b, ok := val.([]byte)
+				if ok {
+					v = string(b)
+				} else {
+					v = val
+				}
+			case []uint8:
+				// converting everything to an array of interface
+				b, ok := val.([]byte)
+				if ok {
+					v = string(b)
+				} else {
+					v = val
+				}
+				v = strings.Replace(v.(string), "{", "", -1)
+				v = strings.Replace(v.(string), "}", "", -1)
+				items := strings.Split(v.(string), ",")
+				if v.(string) == "" {
+					v = make([]string, 0)
+				} else {
+					v = items
+				}
+			default:
 				v = val
 			}
+
+			entry[col] = v
+		}
+		tableData = append(tableData, entry)
+	}
+	return tableData, nil
+}
+
+//  BasicSliceMapScan Fetch all lines of given select
+//  Individual types:
+//	bool, for booleans
+//	float64, for numbers
+//	string, for strings
+//	[]interface{}, for arrays
+func (d *Database) BasicSliceMapScan(query string, args ...interface{}) ([]map[string]interface{}, error) {
+	stmt, err := d.Conn.Prepare(query)
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+
+	rows, err := stmt.Query(args...)
+	if err != nil {
+		return nil, err
+	}
+	columns, err := rows.Columns()
+	if err != nil {
+		return nil, err
+	}
+	count := len(columns)
+	tableData := make([]map[string]interface{}, 0)
+	values := make([]interface{}, count)
+	valuePtrs := make([]interface{}, count)
+	for rows.Next() {
+		for i := 0; i < count; i++ {
+			valuePtrs[i] = &values[i]
+		}
+		rows.Scan(valuePtrs...)
+		entry := make(map[string]interface{})
+		for i, col := range columns {
+			var v interface{}
+			val := values[i]
+
+			switch values[i].(type) {
+			case string:
+				b, ok := val.([]byte)
+				if ok {
+					v = string(b)
+				} else {
+					v = val
+				}
+			case bool:
+				v = val
+			case int, int8, int16, int32, int64, float32:
+				value := fmt.Sprintf("%v", val)
+				parseFloat, parseErr := strconv.ParseFloat(value, 64)
+
+				if parseErr != nil {
+					v = val
+				} else {
+					v = parseFloat
+				}
+			case float64:
+				v = val
+			case []uint8:
+				// converting everything to an array of interface
+				b, ok := val.([]byte)
+				if ok {
+					v = string(b)
+				} else {
+					v = val
+				}
+				v = strings.Replace(v.(string), "{", "", -1)
+				v = strings.Replace(v.(string), "}", "", -1)
+				items := strings.Split(v.(string), ",")
+				if v.(string) == "" {
+					v = make([]string, 0)
+				} else {
+					v = items
+				}
+			default:
+				if val == nil{
+					v = nil
+				} else {
+					jsonType, marshalErr := json.Marshal(val)
+
+					if marshalErr != nil {
+						v = val
+					} else {
+						v = string(jsonType)
+					}
+				}
+			}
+
 			entry[col] = v
 		}
 		tableData = append(tableData, entry)
