@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/astrolink/gutils/cache"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -114,7 +115,12 @@ func (d *Database) MapScan(query string, args ...interface{}) (map[string]interf
 	return entry, nil
 }
 
-//MapScan Get the result of a query in this format: map[string]interface{}
+//  MapScan Get the result of a query in this format: map[string]interface{}
+//  Individual types:
+//	bool, for booleans
+//	float64, for numbers
+//	string, for strings
+//	[]interface{}, for arrays
 func (d *Database) BasicMapScan(query string, args ...interface{}) (map[string]interface{}, error) {
 	stmt, err := d.Conn.Prepare(query)
 	if err != nil {
@@ -153,6 +159,19 @@ func (d *Database) BasicMapScan(query string, args ...interface{}) (map[string]i
 				} else {
 					v = val
 				}
+			case bool:
+				v = val
+			case int, int8, int16, int32, int64, float32:
+				value := fmt.Sprintf("%v", val)
+				parseFloat, parseErr := strconv.ParseFloat(value, 64)
+
+				if parseErr != nil {
+					v = val
+				} else {
+					v = parseFloat
+				}
+			case float64:
+				v = val
 			case []uint8:
 				// converting everything to an array of interface
 				b, ok := val.([]byte)
