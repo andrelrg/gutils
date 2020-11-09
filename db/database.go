@@ -82,13 +82,6 @@ func (d *Database) MapScan(query string, args ...interface{}) (map[string]interf
 			val := values[i]
 
 			switch values[i].(type) {
-			case string:
-				b, ok := val.([]byte)
-				if ok {
-					v = string(b)
-				} else {
-					v = val
-				}
 			case []uint8:
 				// converting everything to an array of interface
 				b, ok := val.([]byte)
@@ -106,7 +99,12 @@ func (d *Database) MapScan(query string, args ...interface{}) (map[string]interf
 					v = items
 				}
 			default:
-				v = val
+				b, ok := val.([]byte)
+				if ok {
+					v = string(b)
+				} else {
+					v = val
+				}
 			}
 
 			entry[col] = v
@@ -362,13 +360,6 @@ func (d *Database) SliceMapScan(query string, args ...interface{}) ([]map[string
 			val := values[i]
 
 			switch values[i].(type) {
-			case string:
-				b, ok := val.([]byte)
-				if ok {
-					v = string(b)
-				} else {
-					v = val
-				}
 			case []uint8:
 				// converting everything to an array of interface
 				b, ok := val.([]byte)
@@ -386,7 +377,12 @@ func (d *Database) SliceMapScan(query string, args ...interface{}) ([]map[string
 					v = items
 				}
 			default:
-				v = val
+				b, ok := val.([]byte)
+				if ok {
+					v = string(b)
+				} else {
+					v = val
+				}
 			}
 
 			entry[col] = v
