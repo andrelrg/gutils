@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/astrolink/gutils/cache"
+	"strings"
 	"time"
 )
 
@@ -78,12 +79,106 @@ func (d *Database) MapScan(query string, args ...interface{}) (map[string]interf
 		for i, col := range columns {
 			var v interface{}
 			val := values[i]
-			b, ok := val.([]byte)
-			if ok {
-				v = string(b)
-			} else {
+
+			switch values[i].(type) {
+			case string:
+				b, ok := val.([]byte)
+				if ok {
+					v = string(b)
+				} else {
+					v = val
+				}
+			case []uint8:
+				// converting everything to an array of interface
+				b, ok := val.([]byte)
+				if ok {
+					v = string(b)
+				} else {
+					v = val
+				}
+				v = strings.Replace(v.(string), "{", "", -1)
+				v = strings.Replace(v.(string), "}", "", -1)
+				items := strings.Split(v.(string), ",")
+				if v.(string) == "" {
+					v = make([]string, 0)
+				} else {
+					v = items
+				}
+			default:
 				v = val
 			}
+
+			entry[col] = v
+		}
+	}
+	return entry, nil
+}
+
+//MapScan Get the result of a query in this format: map[string]interface{}
+func (d *Database) BasicMapScan(query string, args ...interface{}) (map[string]interface{}, error) {
+	stmt, err := d.Conn.Prepare(query)
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+
+	rows, err := stmt.Query(args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	columns, err := rows.Columns()
+	if err != nil {
+		return nil, err
+	}
+	count := len(columns)
+	values := make([]interface{}, count)
+	valuePtrs := make([]interface{}, count)
+	entry := make(map[string]interface{})
+	for rows.Next() {
+		for i := 0; i < count; i++ {
+			valuePtrs[i] = &values[i]
+		}
+		rows.Scan(valuePtrs...)
+		entry = make(map[string]interface{})
+		for i, col := range columns {
+			var v interface{}
+			val := values[i]
+
+			switch values[i].(type) {
+			case string:
+				b, ok := val.([]byte)
+				if ok {
+					v = string(b)
+				} else {
+					v = val
+				}
+			case []uint8:
+				// converting everything to an array of interface
+				b, ok := val.([]byte)
+				if ok {
+					v = string(b)
+				} else {
+					v = val
+				}
+				v = strings.Replace(v.(string), "{", "", -1)
+				v = strings.Replace(v.(string), "}", "", -1)
+				items := strings.Split(v.(string), ",")
+				if v.(string) == "" {
+					v = make([]string, 0)
+				} else {
+					v = items
+				}
+			default:
+				jsonType, marshalErr := json.Marshal(val)
+
+				if marshalErr != nil {
+					v = val
+				} else {
+					v = string(jsonType)
+				}
+			}
+
 			entry[col] = v
 		}
 	}
@@ -92,7 +187,7 @@ func (d *Database) MapScan(query string, args ...interface{}) (map[string]interf
 
 func (d *Database) MapScanRedis(query string, duration time.Duration, args ...interface{}) (map[string]interface{}, error) {
 	if d.CacheConfig == nil {
-		return d.MapScan(query, args...)
+		return d.BasicMapScan(query, args...)
 	}
 
 	redis, err := cache.NewRedis(d.CacheConfig)
@@ -100,7 +195,7 @@ func (d *Database) MapScanRedis(query string, duration time.Duration, args ...in
 	if err != nil {
 		fmt.Println("fail to connect to the cache: ", err.Error())
 
-		return d.MapScan(query, args...)
+		return d.BasicMapScan(query, args...)
 	}
 
 	defer redis.Close()
@@ -144,7 +239,7 @@ func generateKeyByQueryAndArgs(query string, args ...interface{}) string {
 }
 
 func (d *Database) setRedisByMapScan(query string, redis *cache.Redis, redisKey string, duration time.Duration, args ...interface{}) (map[string]interface{}, error) {
-	data, mapScanError := d.MapScan(query, args...)
+	data, mapScanError := d.BasicMapScan(query, args...)
 
 	if data == nil {
 		return data, mapScanError
