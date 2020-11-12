@@ -90,11 +90,15 @@ func (d *Database) MapScan(query string, args ...interface{}) (map[string]interf
 				} else {
 					v = val
 				}
+
+				in := strings.Index(v.(string), "{")
 				v = strings.Replace(v.(string), "{", "", -1)
 				v = strings.Replace(v.(string), "}", "", -1)
 				items := strings.Split(v.(string), ",")
 				if v.(string) == "" {
 					v = make([]string, 0)
+				} else if len(items) == 1 && in == -1 {
+					v = string(b)
 				} else {
 					v = items
 				}
@@ -178,11 +182,15 @@ func (d *Database) BasicMapScan(query string, args ...interface{}) (map[string]i
 				} else {
 					v = val
 				}
+
+				in := strings.Index(v.(string), "{")
 				v = strings.Replace(v.(string), "{", "", -1)
 				v = strings.Replace(v.(string), "}", "", -1)
 				items := strings.Split(v.(string), ",")
 				if v.(string) == "" {
 					v = make([]string, 0)
+				} else if len(items) == 1 && in == -1 {
+					v = string(b)
 				} else {
 					v = items
 				}
@@ -368,11 +376,15 @@ func (d *Database) SliceMapScan(query string, args ...interface{}) ([]map[string
 				} else {
 					v = val
 				}
+
+				in := strings.Index(v.(string), "{")
 				v = strings.Replace(v.(string), "{", "", -1)
 				v = strings.Replace(v.(string), "}", "", -1)
 				items := strings.Split(v.(string), ",")
 				if v.(string) == "" {
 					v = make([]string, 0)
+				} else if len(items) == 1 && in == -1 {
+					v = string(b)
 				} else {
 					v = items
 				}
@@ -456,11 +468,15 @@ func (d *Database) BasicSliceMapScan(query string, args ...interface{}) ([]map[s
 				} else {
 					v = val
 				}
+
+				in := strings.Index(v.(string), "{")
 				v = strings.Replace(v.(string), "{", "", -1)
 				v = strings.Replace(v.(string), "}", "", -1)
 				items := strings.Split(v.(string), ",")
 				if v.(string) == "" {
 					v = make([]string, 0)
+				} else if len(items) == 1 && in == -1 {
+					v = string(b)
 				} else {
 					v = items
 				}
