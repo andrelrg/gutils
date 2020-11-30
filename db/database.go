@@ -99,10 +99,14 @@ func (d *Database) MapScan(query string, args ...interface{}) (map[string]interf
 		entry = make(map[string]interface{})
 		for i, col := range columns {
 			var v interface{}
+			var items []string
+
 			val := values[i]
 
 			switch values[i].(type) {
 			case []uint8:
+				isJson := false
+				items = nil
 				// converting everything to an array of interface
 				b, ok := val.([]byte)
 				if ok {
@@ -112,12 +116,26 @@ func (d *Database) MapScan(query string, args ...interface{}) (map[string]interf
 				}
 
 				in := strings.Index(v.(string), "{")
-				v = strings.Replace(v.(string), "{", "", -1)
-				v = strings.Replace(v.(string), "}", "", -1)
-				items := strings.Split(v.(string), ",")
+				if in > -1 {
+					var js map[string]interface{}
+					isJson = json.Unmarshal(b, &js) == nil
+				}
+
+				if !isJson {
+					if v.(string) != "" && v.(string)[0:1] == "{" {
+						v = v.(string)[1:len(v.(string))]
+					}
+
+					if v.(string) != "" && v.(string)[len(v.(string)) - 1:] == "}" {
+						v = v.(string)[0:len(v.(string)) - 1]
+					}
+
+					items = strings.Split(v.(string), ",")
+				}
+
 				if v.(string) == "" {
 					v = make([]string, 0)
-				} else if len(items) == 1 && in == -1 {
+				} else if (len(items) == 1 && in == -1) || isJson {
 					v = string(b)
 				} else {
 					v = items
@@ -171,6 +189,7 @@ func (d *Database) BasicMapScan(query string, args ...interface{}) (map[string]i
 		entry = make(map[string]interface{})
 		for i, col := range columns {
 			var v interface{}
+			var items []string
 			val := values[i]
 
 			switch values[i].(type) {
@@ -195,6 +214,8 @@ func (d *Database) BasicMapScan(query string, args ...interface{}) (map[string]i
 			case float64:
 				v = val
 			case []uint8:
+				isJson := false
+				items = nil
 				// converting everything to an array of interface
 				b, ok := val.([]byte)
 				if ok {
@@ -204,12 +225,26 @@ func (d *Database) BasicMapScan(query string, args ...interface{}) (map[string]i
 				}
 
 				in := strings.Index(v.(string), "{")
-				v = strings.Replace(v.(string), "{", "", -1)
-				v = strings.Replace(v.(string), "}", "", -1)
-				items := strings.Split(v.(string), ",")
+				if in > -1 {
+					var js map[string]interface{}
+					isJson = json.Unmarshal(b, &js) == nil
+				}
+
+				if !isJson {
+					if v.(string) != "" && v.(string)[0:1] == "{" {
+						v = v.(string)[1:len(v.(string))]
+					}
+
+					if v.(string) != "" && v.(string)[len(v.(string)) - 1:] == "}" {
+						v = v.(string)[0:len(v.(string)) - 1]
+					}
+
+					items = strings.Split(v.(string), ",")
+				}
+
 				if v.(string) == "" {
 					v = make([]string, 0)
-				} else if len(items) == 1 && in == -1 {
+				} else if (len(items) == 1 && in == -1) || isJson {
 					v = string(b)
 				} else {
 					v = items
@@ -385,10 +420,13 @@ func (d *Database) SliceMapScan(query string, args ...interface{}) ([]map[string
 		entry := make(map[string]interface{})
 		for i, col := range columns {
 			var v interface{}
+			var items []string
 			val := values[i]
 
 			switch values[i].(type) {
 			case []uint8:
+				isJson := false
+				items = nil
 				// converting everything to an array of interface
 				b, ok := val.([]byte)
 				if ok {
@@ -398,12 +436,26 @@ func (d *Database) SliceMapScan(query string, args ...interface{}) ([]map[string
 				}
 
 				in := strings.Index(v.(string), "{")
-				v = strings.Replace(v.(string), "{", "", -1)
-				v = strings.Replace(v.(string), "}", "", -1)
-				items := strings.Split(v.(string), ",")
+				if in > -1 {
+					var js map[string]interface{}
+					isJson = json.Unmarshal(b, &js) == nil
+				}
+
+				if !isJson {
+					if v.(string) != "" && v.(string)[0:1] == "{" {
+						v = v.(string)[1:len(v.(string))]
+					}
+
+					if v.(string) != "" && v.(string)[len(v.(string)) - 1:] == "}" {
+						v = v.(string)[0:len(v.(string)) - 1]
+					}
+
+					items = strings.Split(v.(string), ",")
+				}
+
 				if v.(string) == "" {
 					v = make([]string, 0)
-				} else if len(items) == 1 && in == -1 {
+				} else if (len(items) == 1 && in == -1) || isJson {
 					v = string(b)
 				} else {
 					v = items
@@ -457,6 +509,7 @@ func (d *Database) BasicSliceMapScan(query string, args ...interface{}) ([]map[s
 		entry := make(map[string]interface{})
 		for i, col := range columns {
 			var v interface{}
+			var items []string
 			val := values[i]
 
 			switch values[i].(type) {
@@ -481,6 +534,8 @@ func (d *Database) BasicSliceMapScan(query string, args ...interface{}) ([]map[s
 			case float64:
 				v = val
 			case []uint8:
+				isJson := false
+				items = nil
 				// converting everything to an array of interface
 				b, ok := val.([]byte)
 				if ok {
@@ -490,12 +545,26 @@ func (d *Database) BasicSliceMapScan(query string, args ...interface{}) ([]map[s
 				}
 
 				in := strings.Index(v.(string), "{")
-				v = strings.Replace(v.(string), "{", "", -1)
-				v = strings.Replace(v.(string), "}", "", -1)
-				items := strings.Split(v.(string), ",")
+				if in > -1 {
+					var js map[string]interface{}
+					isJson = json.Unmarshal(b, &js) == nil
+				}
+
+				if !isJson {
+					if v.(string) != "" && v.(string)[0:1] == "{" {
+						v = v.(string)[1:len(v.(string))]
+					}
+
+					if v.(string) != "" && v.(string)[len(v.(string)) - 1:] == "}" {
+						v = v.(string)[0:len(v.(string)) - 1]
+					}
+
+					items = strings.Split(v.(string), ",")
+				}
+
 				if v.(string) == "" {
 					v = make([]string, 0)
-				} else if len(items) == 1 && in == -1 {
+				} else if (len(items) == 1 && in == -1) || isJson {
 					v = string(b)
 				} else {
 					v = items
