@@ -47,6 +47,24 @@ func (r *Redis) Set(key, value string, duration time.Duration) error {
 	}
 	return nil
 }
+// MSet sets multiple key values
+func(r *Redis) MSet(keys []string, values []interface{}, duration time.Duration) error {
+	var ifaces []interface{}
+	pipe := r.Client.TxPipeline()
+	for i := range keys {
+		ifaces = append(ifaces, keys[i], values[i])
+		pipe.Expire(keys[i], duration)
+	}
+
+	if err := r.Client.MSet(ifaces...).Err(); err != nil {
+		return err
+	}
+
+	if _, err := pipe.Exec(); err != nil {
+		return err
+	}
+	return nil
+}
 // Del delete key.
 func (r *Redis) Del(key string) error {
 	_, err := r.Client.Del(key).Result()
