@@ -152,7 +152,7 @@ func (r *Redis) Scan(match string) ([]string, error) {
 }
 
 // DelByPattern gets redis keys based on a match pattern using Scan() method and then,
-// using DelMany(), removes those keys from redis cache
+// using DelMany(), removes these keys from redis cache
 func (r *Redis) DelByPattern(match string) error {
 	var err error
 	var keys []string
@@ -169,7 +169,7 @@ func (r *Redis) DelByPattern(match string) error {
 
 // DelByKeysPattern DO NOT USE THIS METHOD unless you're absolutely sure about what you're doing!
 // it gets redis keys based on a match pattern using Keys() method and then,
-// using DelMany(), removes those keys from redis cache
+// using DelMany(), removes these keys from redis cache
 func (r *Redis) DelByKeysPattern(match string) error {
 	var err error
 	var keys []string
