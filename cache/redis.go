@@ -1,21 +1,26 @@
 package cache
+
 import (
 	"errors"
 	"fmt"
 	"log"
 	"strconv"
 	"time"
+
 	redisClient "gopkg.in/redis.v5"
 )
+
 const (
-	KeyNotFound  = "key not found"
+	KeyNotFound     = "key not found"
 	ErrorClearCache = "fail to clean cache %s"
 )
+
 // Redis struct to manage redis.
 type Redis struct {
 	Client *redisClient.Client
 	db     Config
 }
+
 // NewRedis is responsible for building a redis struct instance
 func NewRedis(config Config) (*Redis, error) {
 	red := Redis{db: config}
@@ -25,6 +30,7 @@ func NewRedis(config Config) (*Redis, error) {
 	}
 	return &red, nil
 }
+
 // Connect connects on redis database
 func (r *Redis) Connect() error {
 	db, _ := strconv.Atoi(r.db.GetDatabase())
@@ -39,6 +45,7 @@ func (r *Redis) Connect() error {
 	}
 	return nil
 }
+
 // Set set key.
 func (r *Redis) Set(key, value string, duration time.Duration) error {
 	_, err := r.Client.Set(key, value, duration).Result()
@@ -47,8 +54,9 @@ func (r *Redis) Set(key, value string, duration time.Duration) error {
 	}
 	return nil
 }
+
 // MSet sets multiple key values
-func(r *Redis) MSet(keys []string, values []interface{}, duration time.Duration) error {
+func (r *Redis) MSet(keys []string, values []interface{}, duration time.Duration) error {
 	var ifaces []interface{}
 	pipe := r.Client.TxPipeline()
 	for i := range keys {
@@ -65,6 +73,7 @@ func(r *Redis) MSet(keys []string, values []interface{}, duration time.Duration)
 	}
 	return nil
 }
+
 // Del delete key.
 func (r *Redis) Del(key string) error {
 	_, err := r.Client.Del(key).Result()
@@ -73,6 +82,7 @@ func (r *Redis) Del(key string) error {
 	}
 	return nil
 }
+
 // DelMany delete many keys.
 func (r *Redis) DelMany(keys []string) error {
 	_, err := r.Client.Del(keys...).Result()
@@ -81,6 +91,7 @@ func (r *Redis) DelMany(keys []string) error {
 	}
 	return nil
 }
+
 // Get get key.
 func (r *Redis) Get(key string) (string, error) {
 	value, err := r.Client.Get(key).Result()
@@ -91,6 +102,7 @@ func (r *Redis) Get(key string) (string, error) {
 	}
 	return value, nil
 }
+
 // Exist test if key exists.
 func (r *Redis) Exist(key string) (bool, error) {
 	_, err := r.Client.Get(key).Result()
@@ -101,15 +113,79 @@ func (r *Redis) Exist(key string) (bool, error) {
 	}
 	return true, nil
 }
+
 // FlushAll clears all keys in the cache
 func (r *Redis) FlushAll() error {
 	result := r.Client.FlushAll()
-	if result.Val() != "OK"{
+	if result.Val() != "OK" {
 		err := fmt.Errorf(ErrorClearCache, result.Err())
 		return err
 	}
 	return nil
 }
+
+// Scan gets redis keys based on a match pattern, something like r.Scan("my_key:*")
+func (r *Redis) Scan(match string) ([]string, error) {
+	var err error
+	var cursor uint64
+	var keys []string
+	var result []string
+	var count int64
+
+	count = 100
+
+	for {
+		keys, cursor, err = r.Client.Scan(cursor, match, count).Result()
+
+		if err != nil {
+			log.Println(fmt.Printf("error scanning cache keys by match %s, %s", match, err.Error()))
+			return result, err
+		}
+
+		result = append(result, keys...)
+		if cursor == 0 {
+			break
+		}
+	}
+
+	return result, err
+}
+
+// DelByPattern gets redis keys based on a match pattern using Scan() method and then,
+// using DelMany(), removes these keys from redis cache
+func (r *Redis) DelByPattern(match string) error {
+	var err error
+	var keys []string
+
+	keys, err = r.Scan(match)
+
+	if len(keys) == 0 {
+		return err
+	}
+
+	err = r.DelMany(keys)
+	return err
+}
+
+// DelByKeysPattern DO NOT USE THIS METHOD unless you're absolutely sure about what you're doing!
+// it gets redis keys based on a match pattern using Keys() method and then,
+// using DelMany(), removes these keys from redis cache
+func (r *Redis) DelByKeysPattern(match string) error {
+	var err error
+	var keys []string
+
+	log.Println("please, DON'T USE DelByKeysPattern() method on production environment unless you're 100% sure")
+
+	keys, err = r.Client.Keys(match).Result()
+
+	if err != nil {
+		return err
+	}
+
+	err = r.DelMany(keys)
+	return err
+}
+
 // Close is responsible for closing redis connection
 func (r *Redis) Close() {
 	err := r.Client.Close()
