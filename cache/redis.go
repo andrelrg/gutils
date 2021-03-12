@@ -167,6 +167,25 @@ func (r *Redis) DelByPattern(match string) error {
 	return err
 }
 
+// DelByKeysPattern DO NOT USE THIS METHOD unless you're absolutely sure about what you're doing!
+// it gets redis keys based on a match pattern using Keys() method and then,
+// using DelMany(), removes those keys from redis cache
+func (r *Redis) DelByKeysPattern(match string) error {
+	var err error
+	var keys []string
+
+	log.Println("please, DON'T USE DelByKeysPattern() method on production environment unless you're 100% sure")
+
+	keys, err = r.Client.Keys(match).Result()
+
+	if err != nil {
+		return err
+	}
+
+	err = r.DelMany(keys)
+	return err
+}
+
 // Close is responsible for closing redis connection
 func (r *Redis) Close() {
 	err := r.Client.Close()

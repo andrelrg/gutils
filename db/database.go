@@ -5,10 +5,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"github.com/astrolink/gutils/cache"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/astrolink/gutils/cache"
 )
 
 type Database struct {
@@ -50,7 +51,6 @@ func (d *Database) Execute(query string, args ...interface{}) (sql.Result, error
 	return result, nil
 }
 
-
 // ExecuteWithTx executes the received query with the parameters provided within a transaction.
 func (d *Database) ExecuteWithTx(tx *sql.Tx, query string, args ...interface{}) (sql.Result, error) {
 	var result sql.Result
@@ -68,7 +68,6 @@ func (d *Database) ExecuteWithTx(tx *sql.Tx, query string, args ...interface{}) 
 
 	return result, nil
 }
-
 
 //MapScan Get the result of a query in this format: map[string]interface{}
 func (d *Database) MapScan(query string, args ...interface{}) (map[string]interface{}, error) {
@@ -121,23 +120,30 @@ func (d *Database) MapScan(query string, args ...interface{}) (map[string]interf
 					isJson = json.Unmarshal(b, &js) == nil
 				}
 
+				startBraces := false
+				endBraces := false
+
 				if !isJson {
 					if v.(string) != "" && v.(string)[0:1] == "{" {
 						v = v.(string)[1:len(v.(string))]
+						startBraces = true
 					}
 
-					if v.(string) != "" && v.(string)[len(v.(string)) - 1:] == "}" {
-						v = v.(string)[0:len(v.(string)) - 1]
+					if v.(string) != "" && v.(string)[len(v.(string))-1:] == "}" {
+						v = v.(string)[0 : len(v.(string))-1]
+						endBraces = true
 					}
 
-					items = strings.Split(v.(string), ",")
+					if startBraces && endBraces {
+						items = strings.Split(v.(string), ",")
+					}
 				}
 
 				if v.(string) == "" {
 					v = make([]string, 0)
 				} else if (len(items) == 1 && in == -1) || isJson {
 					v = string(b)
-				} else {
+				} else if startBraces && endBraces {
 					v = items
 				}
 			default:
@@ -230,27 +236,34 @@ func (d *Database) BasicMapScan(query string, args ...interface{}) (map[string]i
 					isJson = json.Unmarshal(b, &js) == nil
 				}
 
+				startBraces := false
+				endBraces := false
+
 				if !isJson {
 					if v.(string) != "" && v.(string)[0:1] == "{" {
 						v = v.(string)[1:len(v.(string))]
+						startBraces = true
 					}
 
-					if v.(string) != "" && v.(string)[len(v.(string)) - 1:] == "}" {
-						v = v.(string)[0:len(v.(string)) - 1]
+					if v.(string) != "" && v.(string)[len(v.(string))-1:] == "}" {
+						v = v.(string)[0 : len(v.(string))-1]
+						endBraces = true
 					}
 
-					items = strings.Split(v.(string), ",")
+					if startBraces && endBraces {
+						items = strings.Split(v.(string), ",")
+					}
 				}
 
 				if v.(string) == "" {
 					v = make([]string, 0)
 				} else if (len(items) == 1 && in == -1) || isJson {
 					v = string(b)
-				} else {
+				} else if startBraces && endBraces {
 					v = items
 				}
 			default:
-				if val == nil{
+				if val == nil {
 					v = nil
 				} else {
 					jsonType, marshalErr := json.Marshal(val)
@@ -441,23 +454,30 @@ func (d *Database) SliceMapScan(query string, args ...interface{}) ([]map[string
 					isJson = json.Unmarshal(b, &js) == nil
 				}
 
+				startBraces := false
+				endBraces := false
+
 				if !isJson {
 					if v.(string) != "" && v.(string)[0:1] == "{" {
 						v = v.(string)[1:len(v.(string))]
+						startBraces = true
 					}
 
-					if v.(string) != "" && v.(string)[len(v.(string)) - 1:] == "}" {
-						v = v.(string)[0:len(v.(string)) - 1]
+					if v.(string) != "" && v.(string)[len(v.(string))-1:] == "}" {
+						v = v.(string)[0 : len(v.(string))-1]
+						endBraces = true
 					}
 
-					items = strings.Split(v.(string), ",")
+					if startBraces && endBraces {
+						items = strings.Split(v.(string), ",")
+					}
 				}
 
 				if v.(string) == "" {
 					v = make([]string, 0)
 				} else if (len(items) == 1 && in == -1) || isJson {
 					v = string(b)
-				} else {
+				} else if startBraces && endBraces {
 					v = items
 				}
 			default:
@@ -550,27 +570,34 @@ func (d *Database) BasicSliceMapScan(query string, args ...interface{}) ([]map[s
 					isJson = json.Unmarshal(b, &js) == nil
 				}
 
+				startBraces := false
+				endBraces := false
+
 				if !isJson {
 					if v.(string) != "" && v.(string)[0:1] == "{" {
 						v = v.(string)[1:len(v.(string))]
+						startBraces = true
 					}
 
-					if v.(string) != "" && v.(string)[len(v.(string)) - 1:] == "}" {
-						v = v.(string)[0:len(v.(string)) - 1]
+					if v.(string) != "" && v.(string)[len(v.(string))-1:] == "}" {
+						v = v.(string)[0 : len(v.(string))-1]
+						endBraces = true
 					}
 
-					items = strings.Split(v.(string), ",")
+					if startBraces && endBraces {
+						items = strings.Split(v.(string), ",")
+					}
 				}
 
 				if v.(string) == "" {
 					v = make([]string, 0)
 				} else if (len(items) == 1 && in == -1) || isJson {
 					v = string(b)
-				} else {
+				} else if startBraces && endBraces {
 					v = items
 				}
 			default:
-				if val == nil{
+				if val == nil {
 					v = nil
 				} else {
 					jsonType, marshalErr := json.Marshal(val)
@@ -671,7 +698,6 @@ func (d *Database) GetJSONList(sqlString string) ([]map[string]interface{}, erro
 func (d *Database) StartTransaction() (*sql.Tx, error) {
 	return d.Conn.Begin()
 }
-
 
 // Close is responsible for closing database connection
 func (d *Database) Close() {
