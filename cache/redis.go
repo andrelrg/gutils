@@ -151,6 +151,8 @@ func (r *Redis) Scan(match string) ([]string, error) {
 
 	count = 100
 
+	match = buildServiceKey(match)
+
 	for {
 		keys, cursor, err = r.Client.Scan(cursor, match, count).Result()
 
@@ -174,6 +176,8 @@ func (r *Redis) DelByPattern(match string) error {
 	var err error
 	var keys []string
 
+	match = buildServiceKey(match)
+
 	keys, err = r.Scan(match)
 
 	if len(keys) == 0 {
@@ -192,6 +196,8 @@ func (r *Redis) DelByKeysPattern(match string) error {
 	var keys []string
 
 	log.Println("please, DON'T USE DelByKeysPattern() method on production environment unless you're 100% sure")
+
+	match = buildServiceKey(match)
 
 	keys, err = r.Client.Keys(match).Result()
 
