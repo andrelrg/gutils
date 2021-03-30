@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 
@@ -48,6 +50,8 @@ func (r *Redis) Connect() error {
 
 // Set set key.
 func (r *Redis) Set(key, value string, duration time.Duration) error {
+	key = buildServiceKey(key)
+
 	_, err := r.Client.Set(key, value, duration).Result()
 	if err != nil {
 		return err
@@ -60,8 +64,11 @@ func (r *Redis) MSet(keys []string, values []interface{}, duration time.Duration
 	var ifaces []interface{}
 	pipe := r.Client.TxPipeline()
 	for i := range keys {
-		ifaces = append(ifaces, keys[i], values[i])
-		pipe.Expire(keys[i], duration)
+		key := keys[i]
+		key = buildServiceKey(key)
+
+		ifaces = append(ifaces, key, values[i])
+		pipe.Expire(key, duration)
 	}
 
 	if err := r.Client.MSet(ifaces...).Err(); err != nil {
@@ -76,6 +83,8 @@ func (r *Redis) MSet(keys []string, values []interface{}, duration time.Duration
 
 // Del delete key.
 func (r *Redis) Del(key string) error {
+	key = buildServiceKey(key)
+
 	_, err := r.Client.Del(key).Result()
 	if err != nil {
 		return err
@@ -85,6 +94,10 @@ func (r *Redis) Del(key string) error {
 
 // DelMany delete many keys.
 func (r *Redis) DelMany(keys []string) error {
+	for i := range keys {
+		keys[i] = buildServiceKey(keys[i])
+	}
+
 	_, err := r.Client.Del(keys...).Result()
 	if err != nil {
 		return err
@@ -94,6 +107,8 @@ func (r *Redis) DelMany(keys []string) error {
 
 // Get get key.
 func (r *Redis) Get(key string) (string, error) {
+	key = buildServiceKey(key)
+
 	value, err := r.Client.Get(key).Result()
 	if err == redisClient.Nil {
 		return "", errors.New(KeyNotFound)
@@ -105,6 +120,8 @@ func (r *Redis) Get(key string) (string, error) {
 
 // Exist test if key exists.
 func (r *Redis) Exist(key string) (bool, error) {
+	key = buildServiceKey(key)
+
 	_, err := r.Client.Get(key).Result()
 	if err == redisClient.Nil {
 		return false, nil
@@ -134,6 +151,8 @@ func (r *Redis) Scan(match string) ([]string, error) {
 
 	count = 100
 
+	match = buildServiceKey(match)
+
 	for {
 		keys, cursor, err = r.Client.Scan(cursor, match, count).Result()
 
@@ -157,6 +176,8 @@ func (r *Redis) DelByPattern(match string) error {
 	var err error
 	var keys []string
 
+	match = buildServiceKey(match)
+
 	keys, err = r.Scan(match)
 
 	if len(keys) == 0 {
@@ -176,6 +197,8 @@ func (r *Redis) DelByKeysPattern(match string) error {
 
 	log.Println("please, DON'T USE DelByKeysPattern() method on production environment unless you're 100% sure")
 
+	match = buildServiceKey(match)
+
 	keys, err = r.Client.Keys(match).Result()
 
 	if err != nil {
@@ -192,4 +215,12 @@ func (r *Redis) Close() {
 	if err != nil {
 		log.Println(err)
 	}
+}
+
+//build key from binary name
+func buildServiceKey(key string) string {
+	binaryName := os.Args[0]
+	binaryName = filepath.Base(binaryName)
+
+	return binaryName + ":" + key
 }
