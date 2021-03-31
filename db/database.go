@@ -140,7 +140,7 @@ func (d *Database) MapScan(query string, args ...interface{}) (map[string]interf
 				}
 
 				if v.(string) == "" {
-					v = make([]string, 0)
+					v = ""
 				} else if (len(items) == 1 && in == -1) || isJson {
 					v = string(b)
 				} else if startBraces && endBraces {
@@ -256,7 +256,7 @@ func (d *Database) BasicMapScan(query string, args ...interface{}) (map[string]i
 				}
 
 				if v.(string) == "" {
-					v = make([]string, 0)
+					v = ""
 				} else if (len(items) == 1 && in == -1) || isJson {
 					v = string(b)
 				} else if startBraces && endBraces {
@@ -474,7 +474,7 @@ func (d *Database) SliceMapScan(query string, args ...interface{}) ([]map[string
 				}
 
 				if v.(string) == "" {
-					v = make([]string, 0)
+					v = ""
 				} else if (len(items) == 1 && in == -1) || isJson {
 					v = string(b)
 				} else if startBraces && endBraces {
@@ -590,7 +590,7 @@ func (d *Database) BasicSliceMapScan(query string, args ...interface{}) ([]map[s
 				}
 
 				if v.(string) == "" {
-					v = make([]string, 0)
+					v = ""
 				} else if (len(items) == 1 && in == -1) || isJson {
 					v = string(b)
 				} else if startBraces && endBraces {
